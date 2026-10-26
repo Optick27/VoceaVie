@@ -12,34 +12,34 @@ jobs:
       - name: Download repository
         uses: actions/checkout@v4
 
+      - name: Unzip Android project
+        run: |
+          mkdir -p /tmp/voceavie
+          unzip -o VoceaVieAndroid_starter.zip -d /tmp/voceavie
+          echo "Files extracted:"
+          find /tmp/voceavie -maxdepth 4 -type f | head -100
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Find Android project
-        run: |
-          echo "Checking repository files"
-          find . -maxdepth 4 -type f | head -200
-
       - name: Build APK
         run: |
-          if [ -f gradlew ]; then
-            chmod +x gradlew
-            ./gradlew assembleDebug
-          elif [ -f app/gradlew ]; then
-            cd app
-            chmod +x gradlew
-            ./gradlew assembleDebug
-          else
-            echo "Gradle wrapper not found. The Android project needs to be checked."
+          WRAPPER=$(find /tmp/voceavie -name gradlew -type f | head -1)
+          if [ -z "$WRAPPER" ]; then
+            echo "No gradlew found in the ZIP archive."
             exit 1
           fi
+          PROJECT_DIR=$(dirname "$WRAPPER")
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: Save APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: VoceaVie-APK
-          path: '**/build/outputs/apk/debug/*.apk'
+          path: /tmp/voceavie/**/build/outputs/apk/debug/*.apk
