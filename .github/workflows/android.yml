@@ -12,12 +12,11 @@ jobs:
       - name: Download repository
         uses: actions/checkout@v4
 
-      - name: Unzip Android project
+      - name: Extract Android project
         run: |
           mkdir -p /tmp/voceavie
           unzip -o VoceaVieAndroid_starter.zip -d /tmp/voceavie
-          echo "Files extracted:"
-          find /tmp/voceavie -maxdepth 4 -type f | head -100
+          ls -la /tmp/voceavie/VoceaVieAndroid
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -25,21 +24,19 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
       - name: Build APK
         run: |
-          WRAPPER=$(find /tmp/voceavie -name gradlew -type f | head -1)
-          if [ -z "$WRAPPER" ]; then
-            echo "No gradlew found in the ZIP archive."
-            exit 1
-          fi
-          PROJECT_DIR=$(dirname "$WRAPPER")
-          cd "$PROJECT_DIR"
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          cd /tmp/voceavie/VoceaVieAndroid
+          gradle assembleDebug
 
       - name: Save APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: VoceaVie-APK
-          path: /tmp/voceavie/**/build/outputs/apk/debug/*.apk
+          path: /tmp/voceavie/VoceaVieAndroid/app/build/outputs/apk/debug/*.apk
